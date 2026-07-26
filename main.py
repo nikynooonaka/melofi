@@ -76,7 +76,7 @@ def search_music(query, max_results=12):
     """Cari lagu lewat yt-dlp"""
     if not YTDL_AVAILABLE:
         return mock_search(query, max_results)
-    
+
     opts = {**YTDL_OPTS, 'user_agent': random_ua()}
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -132,7 +132,7 @@ def get_audio_streams(url):
     """Ambil info audio streams dari URL"""
     if not YTDL_AVAILABLE:
         return None
-    
+
     opts = {
         **YTDL_OPTS,
         'user_agent': random_ua(),
@@ -163,9 +163,9 @@ def get_audio_streams(url):
 def embed_metadata(filepath, metadata, cover_data=None):
     """Tulis metadata ke file audio (opus/m4a)"""
     if not MUTAGEN_AVAILABLE:
-        print("[*] mutagen skip — gak keinstall")
+        print("[*] mutagen skip - gak keinstall")
         return False
-    
+
     ext = Path(filepath).suffix.lower()
     try:
         if ext == '.opus':
@@ -184,7 +184,7 @@ def embed_metadata(filepath, metadata, cover_data=None):
                 pic.width = pic.height = 640
                 audio['metadata_block_picture'] = pic.write()
             audio.save()
-            
+
         elif ext == '.m4a':
             audio = MP4(filepath)
             audio['\xa9nam'] = metadata.get('title', '')
@@ -198,11 +198,11 @@ def embed_metadata(filepath, metadata, cover_data=None):
                                MP4Cover.FORMAT_JPEG)
                 audio['covr'] = [cov]
             audio.save()
-        
+
         else:
             print(f"[*] format {ext} belum didukung metadata")
             return False
-        
+
         print(f"[✓] metadata tertulis ke {Path(filepath).name}")
         return True
     except Exception as e:
@@ -234,7 +234,7 @@ class DownloadManager:
         self.active = {}       # active downloads: id -> progress_info
         self.history = []      #已完成
         self._lock = threading.Lock()
-    
+
     def get_opts(self):
         return {
             'format': 'bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio',
@@ -248,13 +248,13 @@ class DownloadManager:
             'extractor_args': {'youtube': {'skip': ['dash', 'hls']}},
             'progress_hooks': [self._progress_hook],
         }
-    
+
     def _progress_hook(self, d):
         status = d.get('status', '')
         info_id = d.get('info_dict', {}).get('id', '')
         if not info_id:
             return
-        
+
         with self._lock:
             if status == 'downloading':
                 total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
@@ -271,7 +271,7 @@ class DownloadManager:
                 self.active[info_id] = {**self.active.get(info_id, {}), 'status': 'processing'}
             elif status == 'error':
                 self.active[info_id] = {**self.active.get(info_id, {}), 'status': 'error'}
-    
+
     def start_download(self, song_data, progress_callback, done_callback):
         """Mulai download di thread bg"""
         thread = threading.Thread(
@@ -280,26 +280,26 @@ class DownloadManager:
             daemon=True,
         )
         thread.start()
-    
+
     def _do_download(self, song, prog_cb, done_cb):
         if not YTDL_AVAILABLE:
             Clock.schedule_once(lambda dt: done_cb(song, False, "yt-dlp gak tersedia"))
             return
-        
+
         # kalo mock, skip
         if song.get('source') == 'mock' or not song.get('url'):
             Clock.schedule_once(lambda dt: done_cb(song, False, "URL tidak valid"))
             return
-        
+
         opts = self.get_opts()
         info_id = song.get('id', '')
-        
+
         try:
             # ── Download ──
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(song['url'], download=True)
                 filename = ydl.prepare_filename(info)
-                
+
             # cari file beneran (ext bisa beda)
             downloaded_path = None
             for f in self.download_dir.iterdir():
@@ -310,11 +310,11 @@ class DownloadManager:
                 # fallback: file terbaru
                 files = sorted(self.download_dir.iterdir(), key=os.path.getmtime, reverse=True)
                 downloaded_path = files[0] if files else None
-            
+
             if not downloaded_path or not downloaded_path.exists():
                 Clock.schedule_once(lambda dt: done_cb(song, False, "File gak ditemukan"))
                 return
-            
+
             # ── Metadata ──
             meta = {
                 'title': info.get('title', song.get('title', '')),
@@ -322,33 +322,66 @@ class DownloadManager:
                 'album': info.get('album', ''),
                 'year': str(info.get('release_year') or info.get('upload_date', '')[:4] if info.get('upload_date') else ''),
             }
-            
+
             cover_data = None
             thumb = info.get('thumbnail') or song.get('thumb', '')
             if thumb:
                 cover_data = download_cover(thumb)
-            
+
             embed_metadata(str(downloaded_path), meta, cover_data)
-            
+
             # rename ke .opus kalo mentok
             final_path = downloaded_path
             if downloaded_path.suffix.lower() not in ('.opus', '.m4a', '.mp3'):
                 new = downloaded_path.with_suffix('.opus')
                 downloaded_path.rename(new)
                 final_path = new
-            
+
+            # ── Organisir folder: (Artis) - (Nama Album) ──
+            artist_name = (meta.get('artist') or 'Unknown').strip()
+            album_name = (meta.get('album') or 'Unknown').strip()
+            # fallback kalo album kosong pake "Single"
+            if not album_name or album_name == '' or album_name == 'Unknown':
+                album_name = 'Single'
+
+            # sanitasi karakter aneh buat folder
+            def sanitize(name):
+                import re
+                nama = re.sub(r'[<>:"/\\|?*]', '', name)
+                nama = nama.strip()
+                return nama[:120]  # potong kalo kepanjangan
+
+            artist_safe = sanitize(artist_name)
+            album_safe = sanitize(album_name)
+            folder_name = f"{artist_safe} - {album_safe}"
+            album_dir = self.download_dir / folder_name
+            album_dir.mkdir(parents=True, exist_ok=True)
+
+            # pindahin file ke folder album
+            target_path = album_dir / final_path.name
+            # kalo udah ada file sama, tambahin nomor
+            if target_path.exists():
+                stem = final_path.stem
+                count = 1
+                while target_path.exists():
+                    target_path = album_dir / f"{stem}_{count}{final_path.suffix}"
+                    count += 1
+            final_path.rename(target_path)
+            final_path = target_path
+
             with self._lock:
                 self.history.append({
                     'title': meta['title'],
                     'artist': meta['artist'],
+                    'album': album_name,
                     'path': str(final_path),
                     'size': final_path.stat().st_size if final_path.exists() else 0,
                 })
                 if info_id in self.active:
                     del self.active[info_id]
-            
+
             Clock.schedule_once(lambda dt: done_cb(song, True, meta['title']))
-            
+
         except Exception as e:
             print(f"[ERR] download: {e}")
             with self._lock:
@@ -364,10 +397,10 @@ class DownloadManager:
 class HomeScreen(MDScreen):
     def on_enter(self):
         self.refresh_home()
-    
+
     def refresh_home(self):
         pass  # akan dipanggil pas search / load
-    
+
     def do_search(self):
         query = self.ids.search_field.text.strip()
         if not query:
@@ -387,15 +420,15 @@ class SearchScreen(MDScreen):
             self.ids.result_list.clear_widgets()
             # run di thread
             threading.Thread(target=self._do_search, args=(query,), daemon=True).start()
-    
+
     def _do_search(self, query):
         results = search_music(query)
         Clock.schedule_once(lambda dt: self._show_results(results))
-    
+
     def _show_results(self, results):
         self.ids.status_label.text = f"🎯 {len(results)} hasil ditemukan"
         self.ids.result_list.clear_widgets()
-        
+
         if not results:
             self.ids.result_list.add_widget(MDLabel(
                 text="Gak ada hasil. Coba kata kunci lain~",
@@ -405,12 +438,12 @@ class SearchScreen(MDScreen):
                 height=dp(60),
             ))
             return
-        
+
         for song in results:
             card = SongCard(song=song)
             card.bind(on_download=lambda s=song: self._start_download(s))
             self.ids.result_list.add_widget(card)
-    
+
     def _start_download(self, song):
         app = MDApp.get_running_app()
         app.download_mgr.start_download(
@@ -419,7 +452,7 @@ class SearchScreen(MDScreen):
             done_callback=lambda s, ok, msg: self._on_done(s, ok, msg),
         )
         MDSnackbar(text=f"⏳ Download: {song['title']}", duration=2).open()
-    
+
     def _on_done(self, song, ok, msg):
         if ok:
             MDSnackbar(text=f"✅ {msg} selesai!", duration=3).open()
@@ -430,25 +463,25 @@ class SearchScreen(MDScreen):
 class DownloadsScreen(MDScreen):
     def on_enter(self):
         self.refresh()
-    
+
     def refresh(self):
         """Refresh the list when entering screen"""
         app = MDApp.get_running_app()
         dl = app.download_mgr
         self.ids.dl_list.clear_widgets()
-        
+
         # Active
         active = list(dl.active.values())
         if active:
             for info_id, info in dl.active.items():
                 item = DownloadItem(info=info)
                 self.ids.dl_list.add_widget(item)
-        
+
         # History
         for h in dl.history[-10:]:  # last 10
             done_item = DownloadItem(done_data=h)
             self.ids.dl_list.add_widget(done_item)
-        
+
         if not active and not dl.history:
             self.ids.dl_list.add_widget(MDLabel(
                 text="Belum ada download.\nCari lagu dulu yuk! 🎵",
@@ -457,7 +490,7 @@ class DownloadsScreen(MDScreen):
                 size_hint_y=None,
                 height=dp(100),
             ))
-    
+
     def on_resume(self):
         self.refresh()
 
@@ -482,10 +515,10 @@ class SongCard(MDCard):
         self.radius = dp(14)
         self.orientation = "horizontal"
         self.md_bg_color = [0.11, 0.11, 0.13, 1]
-        
+
         from kivymd.uix.label import MDIcon
         from kivy.uix.image import AsyncImage
-        
+
         # Thumbnail / Icon
         if song.get('thumb'):
             img = AsyncImage(
@@ -503,7 +536,7 @@ class SongCard(MDCard):
                 font_size=dp(36),
             )
             self.add_widget(icon)
-        
+
         # Info
         text_box = BoxLayout(orientation="vertical", spacing=2, size_hint_x=1)
         text_box.add_widget(MDLabel(
@@ -521,7 +554,7 @@ class SongCard(MDCard):
             height=dp(18),
         ))
         self.add_widget(text_box)
-        
+
         # Download btn
         from kivymd.uix.button import MDIconButton
         btn = MDIconButton(
@@ -533,7 +566,7 @@ class SongCard(MDCard):
         )
         btn.bind(on_release=lambda x: self.dispatch("on_download"))
         self.add_widget(btn)
-    
+
     def on_download(self):
         pass
 
@@ -554,13 +587,13 @@ class SongCard(MDCard):
         self.orientation = "horizontal"
         self.md_bg_color = [0.11, 0.11, 0.13, 1]
         self._build()
-    
+
     def _build(self):
         from kivymd.uix.label import MDIcon
         from kivy.uix.image import AsyncImage
         from kivymd.uix.button import MDIconButton
         from kivy.uix.boxlayout import BoxLayout
-        
+
         # Thumb
         thumb = self.song.get('thumb', '')
         if thumb:
@@ -569,20 +602,20 @@ class SongCard(MDCard):
         else:
             icon = MDIcon(icon="music-circle", size_hint=(None, 1), width=dp(48), font_size=dp(36))
             self.add_widget(icon)
-        
+
         # Text
         txt = BoxLayout(orientation="vertical", spacing=2, size_hint_x=1)
         txt.add_widget(MDLabel(text=self.song.get('title', ''), font_size=dp(14), bold=True, size_hint_y=None, height=dp(20)))
         txt.add_widget(MDLabel(text=f"{self.song.get('artist', '')} · {self.song.get('duration_str', '?')}",
                                font_size=dp(12), theme_text_color="Secondary", size_hint_y=None, height=dp(18)))
         self.add_widget(txt)
-        
+
         # Btn
         btn = MDIconButton(icon="download", theme_icon_color="Custom", icon_size=dp(22),
                            size_hint=(None, 1), width=dp(40))
         btn.bind(on_release=lambda x: setattr(self, 'on_download', lambda: None))
         self.add_widget(btn)
-    
+
     def on_download(self):
         pass
 
@@ -607,13 +640,13 @@ class DownloadItem(MDCard):
         self.orientation = "horizontal"
         self.md_bg_color = [0.11, 0.11, 0.13, 1]
         self._build(info, done_data)
-    
+
     def _build(self, info, done):
         from kivy.uix.boxlayout import BoxLayout
         from kivymd.uix.label import MDIcon
-        
+
         txt = BoxLayout(orientation="vertical", spacing=2, size_hint_x=1)
-        
+
         if done:
             txt.add_widget(MDLabel(text=done.get('title', ''), font_size=dp(14), bold=True,
                                    size_hint_y=None, height=dp(20)))
@@ -651,7 +684,7 @@ class MelofiApp(MDApp):
         self.download_mgr = DownloadManager(
             self._get_download_dir()
         )
-    
+
     def _get_download_dir(self):
         if platform == 'android':
             # Android: pake dir external
@@ -668,30 +701,30 @@ class MelofiApp(MDApp):
                 pass
         # fallback
         return os.path.join(os.path.expanduser('~'), 'Music', 'Melofi')
-    
+
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Teal"
         self.theme_cls.material_style = "M3"
-        
+
         from kivymd.uix.navigationbar import MDBottomNavigation, MDBottomNavigationItem
-        
+
         # Root layout
         from kivy.uix.screenmanager import ScreenManager
         sm = ScreenManager()
-        
+
         home = HomeScreen(name='home')
         search = SearchScreen(name='search')
         downloads = DownloadsScreen(name='downloads')
         settings = SettingsScreen(name='settings')
-        
+
         sm.add_widget(home)
         sm.add_widget(search)
         sm.add_widget(downloads)
         sm.add_widget(settings)
-        
+
         return sm
-    
+
     def on_start(self):
         pass
 
