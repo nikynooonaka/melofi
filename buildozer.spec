@@ -15,15 +15,15 @@ version = 1.0.0
 version.code = 1
 
 # Requirements (dependencies Python)
-requirements = python3,kivy==2.3.0,kivymd==2.0.0,kivy-deps.angle,kivy-deps.glew,kivy-deps.sdl2,yt-dlp,requests,mutagen,Pillow
+requirements = python3,kivy==2.3.0,kivymd==2.0.0,yt-dlp,requests,mutagen,Pillow
 
 # Orientation
 orientation = portrait
 
-# Android SDK
+# Android SDK (biarkan buildozer download sendiri)
 android.api = 33
 android.minapi = 21
-android.ndk = 27b
+android.ndk = 25c
 android.sdk = 34
 
 # Izin Android
