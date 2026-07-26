@@ -8,14 +8,14 @@ package.domain = com.melofi
 
 # Source code
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,ttf
+source.include_exts = py,png,jpg,kv,atlas,ttf,md
 
 # Versi
 version = 1.0.0
 version.code = 1
 
 # Requirements (dependencies Python)
-requirements = python3,kivy==2.3.1,kivymd==2.0.1,yt-dlp,requests,mutagen,Pillow
+requirements = python3,kivy==2.3.0,kivymd==2.0.0,kivy-deps.angle,kivy-deps.glew,kivy-deps.sdl2,yt-dlp,requests,mutagen,Pillow
 
 # Orientation
 orientation = portrait
