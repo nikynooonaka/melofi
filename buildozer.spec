@@ -28,6 +28,9 @@ android.sdk = 34
 # Izin Android
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,FOREGROUND_SERVICE
 
+# Auto-accept SDK license biar gak minta input manual
+android.accept_sdk_license = True
+
 # Biar APK-nya gak terlalu gede
 android.archs = arm64-v8a
 android.wakelock = True
