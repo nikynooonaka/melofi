@@ -1,0 +1,447 @@
+<MDNavigationLayout>
+    MDScreenManager:
+
+        # ===== HOME SCREEN =====
+        MDScreen:
+            name: 'home'
+            md_bg_color: app.theme_cls.backgroundColor
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: 8
+                padding: [16, 0, 16, 0]
+
+                MDTopAppBar:
+                    title: 'Melo'
+                    title_align: 'left'
+                    md_bg_color: 'transparent'
+                    specific_text_color: app.theme_cls.textColor
+                    right_action_items: [['cog-outline', lambda x: set_screen('settings')]]
+                    elevation: 0
+
+                # Search bar
+                MDFloatLayout:
+                    size_hint_y: None
+                    height: 56
+                    padding: 0
+
+                    MDCard:
+                        orientation: 'horizontal'
+                        size_hint: 1, None
+                        height: 54
+                        pos_hint: {'center_y': .5}
+                        md_bg_color: app.theme_cls.primaryContainerColor
+                        radius: [14, 14, 14, 14]
+                        padding: [6, 0, 16, 0]
+
+                        MDIconButton:
+                            icon: 'magnify'
+                            theme_icon_color: 'Custom'
+                            icon_color: app.theme_cls.onSurfaceVariantColor
+                            pos_hint: {'center_y': .5}
+                            on_release: app.show_search()
+
+                        MDTextField:
+                            id: search_field
+                            hint_text: 'Cari lagu, artis, album...'
+                            mode: 'fill'
+                            filled: False
+                            size_hint_x: 1
+                            pos_hint: {'center_y': .5}
+                            on_text_validate: app.start_search(self.text)
+                            theme_text_color: 'Custom'
+                            text_color: app.theme_cls.textColor
+                            hint_text_color: app.theme_cls.onSurfaceVariantColor
+
+                # Quick chips
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: 44
+                    spacing: 8
+                    padding: [0, 4, 0, 4]
+                    adaptive_size: False
+
+                    MDChip:
+                        label: '🔥 Trending'
+                        md_bg_color: app.theme_cls.primaryColor
+                        text_color: app.theme_cls.onPrimaryColor
+                        size_hint_x: None
+                        width: self.minimum_width + 24
+                        on_release: app.quick_search('trending music 2024')
+
+                    MDChip:
+                        label: '🎵 Terbaru'
+                        md_bg_color: app.theme_cls.secondaryContainerColor
+                        text_color: app.theme_cls.onSecondaryContainerColor
+                        size_hint_x: None
+                        width: self.minimum_width + 24
+                        on_release: app.quick_search('new releases 2024')
+
+                    MDChip:
+                        label: '🎤 Indonesia'
+                        md_bg_color: app.theme_cls.secondaryContainerColor
+                        text_color: app.theme_cls.onSecondaryContainerColor
+                        size_hint_x: None
+                        width: self.minimum_width + 24
+                        on_release: app.quick_search('musik indonesia terbaru')
+
+                    MDChip:
+                        label: '🎧 Lofi'
+                        md_bg_color: app.theme_cls.secondaryContainerColor
+                        text_color: app.theme_cls.onSecondaryContainerColor
+                        size_hint_x: None
+                        width: self.minimum_width + 24
+                        on_release: app.quick_search('lofi hip hop')
+
+                # Section title
+                MDLabel:
+                    text: 'Recommended'
+                    font_style: 'Title'
+                    role: 'small'
+                    size_hint_y: None
+                    height: 36
+                    theme_text_color: 'Custom'
+                    text_color: app.theme_cls.textColor
+
+                # Search results / home content
+                ScrollView:
+                    id: home_scroll
+
+                    MDBoxLayout:
+                        id: results_container
+                        orientation: 'vertical'
+                        adaptive_height: True
+                        spacing: 6
+                        padding: [0, 0, 0, 80]
+
+        # ===== DOWNLOADS SCREEN =====
+        MDScreen:
+            name: 'downloads'
+            md_bg_color: app.theme_cls.backgroundColor
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: 8
+                padding: [16, 0, 16, 0]
+
+                MDTopAppBar:
+                    title: 'Unduhan'
+                    title_align: 'left'
+                    md_bg_color: 'transparent'
+                    specific_text_color: app.theme_cls.textColor
+                    right_action_items: [['delete-sweep-outline', lambda x: app.clear_done()]]
+                    elevation: 0
+
+                # Filter chips
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: 0
+                    spacing: 8
+
+                ScrollView:
+                    MDBoxLayout:
+                        id: downloads_container
+                        orientation: 'vertical'
+                        adaptive_height: True
+                        spacing: 8
+                        padding: [0, 0, 0, 80]
+
+        # ===== SETTINGS SCREEN =====
+        MDScreen:
+            name: 'settings'
+            md_bg_color: app.theme_cls.backgroundColor
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: 4
+                padding: [16, 0, 16, 0]
+
+                MDTopAppBar:
+                    title: 'Pengaturan'
+                    title_align: 'left'
+                    md_bg_color: 'transparent'
+                    specific_text_color: app.theme_cls.textColor
+                    right_action_items: [['close', lambda x: set_screen('home')]]
+                    elevation: 0
+
+                ScrollView:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        adaptive_height: True
+                        spacing: 4
+                        padding: [0, 8, 0, 80]
+
+                        MDLabel:
+                            text: 'AUDIO'
+                            font_style: 'Caption'
+                            role: 'medium'
+                            size_hint_y: None
+                            height: 28
+                            theme_text_color: 'Custom'
+                            text_color: app.theme_cls.primaryColor
+                            padding: [4, 0, 0, 0]
+
+                        MDCard:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 60
+                            padding: [16, 0, 16, 0]
+                            md_bg_color: app.theme_cls.surfaceColor
+                            radius: [12, 12, 12, 12]
+                            spacing: 12
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                adaptive_height: True
+                                pos_hint: {'center_y': .5}
+
+                                MDLabel:
+                                    text: 'Format output'
+                                    font_style: 'Body'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.textColor
+                                MDLabel:
+                                    text: 'Opus 64 kbps · ringan & hemat'
+                                    font_style: 'Caption'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.onSurfaceVariantColor
+
+                            MDLabel:
+                                text: 'Opus'
+                                size_hint_x: None
+                                width: 60
+                                pos_hint: {'center_y': .5}
+                                halign: 'right'
+                                theme_text_color: 'Custom'
+                                text_color: app.theme_cls.primaryColor
+
+                        MDLabel:
+                            text: 'METADATA'
+                            font_style: 'Caption'
+                            role: 'medium'
+                            size_hint_y: None
+                            height: 28
+                            padding: [4, 0, 0, 0]
+                            theme_text_color: 'Custom'
+                            text_color: app.theme_cls.primaryColor
+
+                        # Cover toggle
+                        MDCard:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 60
+                            padding: [16, 0, 12, 0]
+                            md_bg_color: app.theme_cls.surfaceColor
+                            radius: [12, 12, 12, 12]
+                            spacing: 12
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                adaptive_height: True
+                                pos_hint: {'center_y': .5}
+
+                                MDLabel:
+                                    text: 'Cover artwork'
+                                    font_style: 'Body'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.textColor
+                                MDLabel:
+                                    text: 'Embed thumbnail sebagai cover'
+                                    font_style: 'Caption'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.onSurfaceVariantColor
+
+                            MDSwitch:
+                                id: cover_switch
+                                active: True
+                                pos_hint: {'center_y': .5}
+                                size_hint_x: None
+                                width: 48
+
+                        # Metadata toggle
+                        MDCard:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 60
+                            padding: [16, 0, 12, 0]
+                            md_bg_color: app.theme_cls.surfaceColor
+                            radius: [12, 12, 12, 12]
+                            spacing: 12
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                adaptive_height: True
+                                pos_hint: {'center_y': .5}
+
+                                MDLabel:
+                                    text: 'Metadata lengkap'
+                                    font_style: 'Body'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.textColor
+                                MDLabel:
+                                    text: 'Album, tahun, artis, genre'
+                                    font_style: 'Caption'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.onSurfaceVariantColor
+
+                            MDSwitch:
+                                id: meta_switch
+                                active: True
+                                pos_hint: {'center_y': .5}
+                                size_hint_x: None
+                                width: 48
+
+                        MDLabel:
+                            text: 'KONEKSI'
+                            font_style: 'Caption'
+                            role: 'medium'
+                            size_hint_y: None
+                            height: 28
+                            padding: [4, 0, 0, 0]
+                            theme_text_color: 'Custom'
+                            text_color: app.theme_cls.primaryColor
+
+                        # Anti-blokir toggle
+                        MDCard:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 60
+                            padding: [16, 0, 12, 0]
+                            md_bg_color: app.theme_cls.surfaceColor
+                            radius: [12, 12, 12, 12]
+                            spacing: 12
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                adaptive_height: True
+                                pos_hint: {'center_y': .5}
+
+                                MDLabel:
+                                    text: 'Anti-blokir'
+                                    font_style: 'Body'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.textColor
+                                MDLabel:
+                                    text: 'Rotate UA + extractor bypass'
+                                    font_style: 'Caption'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.onSurfaceVariantColor
+
+                            MDSwitch:
+                                id: antiblock_switch
+                                active: True
+                                pos_hint: {'center_y': .5}
+                                size_hint_x: None
+                                width: 48
+
+                        MDLabel:
+                            text: 'PENYIMPANAN'
+                            font_style: 'Caption'
+                            role: 'medium'
+                            size_hint_y: None
+                            height: 28
+                            padding: [4, 0, 0, 0]
+                            theme_text_color: 'Custom'
+                            text_color: app.theme_cls.primaryColor
+
+                        MDCard:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 60
+                            padding: [16, 0, 16, 0]
+                            md_bg_color: app.theme_cls.surfaceColor
+                            radius: [12, 12, 12, 12]
+                            spacing: 12
+
+                            MDBoxLayout:
+                                orientation: 'vertical'
+                                adaptive_height: True
+                                pos_hint: {'center_y': .5}
+
+                                MDLabel:
+                                    text: 'Folder download'
+                                    font_style: 'Body'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.textColor
+                                MDLabel:
+                                    text: 'Musik/Melofi/'
+                                    font_style: 'Caption'
+                                    role: 'small'
+                                    theme_text_color: 'Custom'
+                                    text_color: app.theme_cls.onSurfaceVariantColor
+
+                            MDIconButton:
+                                icon: 'folder-outline'
+                                pos_hint: {'center_y': .5}
+                                theme_icon_color: 'Custom'
+                                icon_color: app.theme_cls.onSurfaceVariantColor
+
+                        # About
+                        MDBoxLayout:
+                            orientation: 'vertical'
+                            size_hint_y: None
+                            height: 80
+                            padding: [0, 20, 0, 0]
+
+                            MDLabel:
+                                text: 'Melofi v1.0.0'
+                                font_style: 'Caption'
+                                halign: 'center'
+                                role: 'small'
+                                theme_text_color: 'Custom'
+                                text_color: app.theme_cls.onSurfaceVariantColor
+                            MDLabel:
+                                text: 'Powered by yt-dlp · Dibuat dengan ❤️'
+                                font_style: 'Caption'
+                                halign: 'center'
+                                role: 'small'
+                                theme_text_color: 'Custom'
+                                text_color: app.theme_cls.onSurfaceVariantColor
+
+    # ===== BOTTOM NAVIGATION =====
+    MDBottomNavigation:
+        id: bottom_nav
+        md_bg_color: app.theme_cls.surfaceColor
+        panel_color: app.theme_cls.surfaceColor
+        text_color_active: app.theme_cls.primaryColor
+        text_color_normal: app.theme_cls.onSurfaceVariantColor
+        icon_color_active: app.theme_cls.primaryColor
+        icon_color_normal: app.theme_cls.onSurfaceVariantColor
+        size_hint_y: None
+        height: 64
+        padding: [0, 4, 0, 0]
+
+        MDBottomNavigationItem:
+            name: 'nav_home'
+            icon: 'home-outline'
+            text: 'Home'
+            on_tab_press: set_screen('home')
+
+        MDBottomNavigationItem:
+            name: 'nav_search'
+            icon: 'magnify'
+            text: 'Cari'
+            on_tab_press: app.show_search()
+
+        MDBottomNavigationItem:
+            name: 'nav_downloads'
+            icon: 'download-outline'
+            text: 'Download'
+            on_tab_press: set_screen('downloads')
+
+        MDBottomNavigationItem:
+            name: 'nav_settings'
+            icon: 'cog-outline'
+            text: 'Setelan'
+            on_tab_press: set_screen('settings')
